@@ -167,7 +167,7 @@ class SaiData:
 
 class Sai:
 
-    attempts = 40
+    attempts = 200
 
     def __init__(self, exec_params):
         self.server_ip = exec_params["server"]
@@ -320,7 +320,7 @@ class Sai:
     def operate(self, obj, attrs, op):
         self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
 
-        tout = 0.03
+        tout = 0.3
         attempts = self.attempts
         while len(self.r.lrange("GETRESPONSE_KEY_VALUE_OP_QUEUE", 0, -1)) > 0 and attempts > 0:
             time.sleep(0.01)
@@ -338,11 +338,13 @@ class Sai:
 
         status = []
         attempts = self.attempts
+        init_call = False
 
-        # Wait upto 6 mins for switch init on HW
+        # Wait upto 3 mins for switch init on HW
         if not self.libsaivs and obj.startswith("SAI_OBJECT_TYPE_SWITCH") and op == "Screate":
             tout = 0.5
-            attempts = 480
+            attempts = 240
+            init_call = True
 
         while len(status) < 3 and attempts > 0:
             time.sleep(tout)
@@ -351,6 +353,10 @@ class Sai:
 
         self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
 
+        if init_call:
+            if len(status) <3:
+                print("Failed getting response from Create Switch. Abort")
+                # return status
         assert len(status) == 3, "SAI \"{}\" operation failure!".format(op)
         return status
 
@@ -656,8 +662,13 @@ class Sai:
                 for idx in range(1, len(attrs), 2):
                     if "oid:" in attrs[idx]:
                         attrs[idx] = self.rec2vid[attrs[idx]]
-
-                self.create(self.__update_key(rec[0], rec[1]), attrs)
+                try:
+                    self.create(self.__update_key(rec[0], rec[1]), attrs)
+                except Exception as e:
+                    if "SAI_OBJECT_TYPE_SWITCH" in rec[1]:
+                        print("Ignore create Switch issue")
+                    else:
+                        raise Exception(e)
 
             elif rec[0] == 's':
                 data = rec[2].split('=')
