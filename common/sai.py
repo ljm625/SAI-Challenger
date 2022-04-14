@@ -263,11 +263,11 @@ class Sai:
         return "SAI_OBJECT_TYPE_" + SaiObjType(obj_type).name
 
     def vid_to_rid(self, vid):
-        assert vid.startswith("oid:"), f"Invalid VID format {vid}"
+        assert vid.startswith("oid:"), "Invalid VID format {}".format(vid)
         rid = self.r.hget("VIDTORID", vid)
         if rid is not None:
             rid = rid.decode("utf-8")
-            assert rid.startswith("oid:"), f"Invalid RID format {vid}"
+            assert rid.startswith("oid:"), "Invalid RID format {}".format(vid)
         return rid
 
     def get_vid(self, obj_type, value=None):
@@ -370,14 +370,14 @@ class Sai:
         status = self.operate(obj, attrs, "Screate")
         status[2] = status[2].decode("utf-8")
         if do_assert:
-            assert status[2] == 'SAI_STATUS_SUCCESS', f"create({obj}, {attrs}) --> {status}"
+            assert status[2] == 'SAI_STATUS_SUCCESS', "create({}, {}) --> {}".format(obj,attrs,status)
             return vid
 
         return status[2], vid
 
     def remove(self, obj, do_assert = True):
         if obj.startswith("oid:"):
-            assert self.vid_to_rid(obj), f"Unable to retrieve RID by VID {obj}"
+            assert self.vid_to_rid(obj), "Unable to retrieve RID by VID {}".format(obj)
             obj = self.vid_to_type(obj) + ":" + obj
         assert obj.startswith("SAI_OBJECT_TYPE_")
         obj = obj.replace(" ", "")
@@ -385,12 +385,12 @@ class Sai:
         status = self.operate(obj, "{}", "Dremove")
         status[2] = status[2].decode("utf-8")
         if do_assert:
-            assert status[2] == 'SAI_STATUS_SUCCESS', f"remove({obj}) --> {status}"
+            assert status[2] == 'SAI_STATUS_SUCCESS', "remove({}) --> {}".format(obj,status)
         return status[2]
 
     def set(self, obj, attr, do_assert = True):
         if obj.startswith("oid:"):
-            assert self.vid_to_rid(obj), f"Unable to retrieve RID by VID {obj}"
+            assert self.vid_to_rid(obj), "Unable to retrieve RID by VID {}".format(obj)
             obj = self.vid_to_type(obj) + ":" + obj
         assert obj.startswith("SAI_OBJECT_TYPE_")
         obj = obj.replace(" ", "")
@@ -400,12 +400,12 @@ class Sai:
         status = self.operate(obj, attr, "Sset")
         status[2] = status[2].decode("utf-8")
         if do_assert:
-            assert status[2] == 'SAI_STATUS_SUCCESS', f"set({obj}, {attr}) --> {status}"
+            assert status[2] == 'SAI_STATUS_SUCCESS', "set({}, {}) --> {}".format(obj,attr,status)
         return status[2]
 
     def get(self, obj, attrs, do_assert = True):
         if obj.startswith("oid:"):
-            assert self.vid_to_rid(obj), f"Unable to retrieve RID by VID {obj}"
+            assert self.vid_to_rid(obj), "Unable to retrieve RID by VID {}".format(obj)
             obj = self.vid_to_type(obj) + ":" + obj
         assert obj.startswith("SAI_OBJECT_TYPE_")
         obj = obj.replace(" ", "")
@@ -416,7 +416,7 @@ class Sai:
         status[2] = status[2].decode("utf-8")
 
         if do_assert:
-            assert status[2] == 'SAI_STATUS_SUCCESS', f"get({obj}, {attrs}) --> {status}"
+            assert status[2] == 'SAI_STATUS_SUCCESS', "get({}, {}) --> {}".format(obj,attrs,status)
 
         data = SaiData(status[1].decode("utf-8"))
         if do_assert:
@@ -483,7 +483,7 @@ class Sai:
         elif attr_type.startswith("sai_") or attr_type == "" or attr_type == "char":
             status, data = self.get(obj, [attr, ""], do_assert)
         else:
-            assert False, f"Unsupported attribute type: get_by_type({obj}, {attr}, {attr_type})"
+            assert False, "Unsupported attribute type: get_by_type({}, {}, {})".format(obj,attr,attr_type)
         return status, data
 
     def get_list(self, obj, attr, value):
@@ -492,7 +492,7 @@ class Sai:
             in_data = self.make_list(data.uint32(), value)
             data = self.get(obj, [attr, in_data])
         else:
-            assert status == 'SAI_STATUS_SUCCESS', f"get_list({obj}, {attr}, {value}) --> {status}"
+            assert status == 'SAI_STATUS_SUCCESS', "get_list({}, {}, {}) --> {}".format(obj,attr,value,status)
 
         return data.to_list()
 

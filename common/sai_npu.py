@@ -28,11 +28,11 @@ class SaiNpu(Sai):
         # Load SKU configuration is any
         if self.sku is not None:
             try:
-                f = open(f"../sku/{self.sku}.json")
+                f = open("../sku/{}.json".format(self.sku))
                 self.sku_config = json.load(f)
                 f.close()
             except Exception as e:
-                assert False, f"{e}"
+                assert False, "{}".format(e)
 
         self.port_oids.clear()
         self.dot1q_bp_oids.clear()
@@ -370,7 +370,7 @@ class SaiNpu(Sai):
         for inum, iname in ifaces.items():
             socket_addr = 'tcp://{}:10001'.format(self.server_ip)
             self.hostif_map[(0, int(inum))] = socket_addr
-            assert self.remote_iface_is_up(iname), f"Interface {iname} must be up before dataplane init."
+            assert self.remote_iface_is_up(iname), "Interface {} must be up before dataplane init.".format(iname)
 
         self.hostif_dataplane = SaiHostifDataPlane(ifaces, self.server_ip)
         self.hostif_dataplane.init()

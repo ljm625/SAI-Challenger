@@ -95,3 +95,4 @@ def apply_rec(sai,records):
 if __name__ == '__main__':
     recording_file = "sairedis.rec"
     sai = SaiNpu(exec_params)
+
