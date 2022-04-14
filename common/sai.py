@@ -635,6 +635,77 @@ class Sai:
 
         print("Current SAI objects: {}".format(self.rec2vid))
 
+    def apply_rec_init(self, records):
+        oids = []
+        inited =False
+        for cnt, rec in records.items():
+            print("#{}: {}".format(cnt, rec))
+            if rec[0] == 'c':
+                if "SAI_OBJECT_TYPE_SWITCH" in rec[1]:
+                    if inited:
+                        print("Object \"{}\" already exists!". format(rec[1]))
+                        continue
+                    else:
+                        inited = True
+                attrs = []
+                if len(rec) > 2:
+                    for attr in rec[2:]:
+                        attrs += attr.split('=')
+
+                # Update OIDs in the attributes
+                for idx in range(1, len(attrs), 2):
+                    if "oid:" in attrs[idx]:
+                        attrs[idx] = self.rec2vid[attrs[idx]]
+
+                self.create(self.__update_key(rec[0], rec[1]), attrs)
+
+            elif rec[0] == 's':
+                data = rec[2].split('=')
+                if "oid:" in data[1]:
+                    data[1] = self.rec2vid[data[1]]
+
+                self.set(self.__update_key(rec[0], rec[1]), data)
+            elif rec[0] == 'r':
+                self.remove(self.__update_key(rec[0], rec[1]))
+            elif rec[0] == 'g':
+                attrs = []
+                if len(rec) > 2:
+                    for attr in rec[2:]:
+                        attrs += attr.split('=')
+
+                data = self.get(self.__update_key(rec[0], rec[1]), attrs)
+
+                jdata = data.to_json()
+                for idx in range(1, len(jdata), 2):
+                    if ":oid:" in jdata[idx]:
+                        oids += data.oids(idx)
+                    elif "oid:" in jdata[idx]:
+                        oids.append(data.oid(idx))
+            elif rec[0] == 'G':
+                attrs = []
+                for attr in rec[2:]:
+                    attrs += attr.split('=')
+
+                G_oids = []
+
+                for idx in range(1, len(attrs), 2):
+                    G_output = attrs[idx]
+
+                    if ":oid:" in G_output:
+                        start_idx = G_output.find(":") + 1
+                        G_oids += G_output[start_idx:].split(",")
+                    elif "oid:" in G_output:
+                        G_oids.append(G_output)
+                assert len(oids) == len(G_oids)
+
+                for idx, oid in enumerate(G_oids):
+                    self.rec2vid[oid] = oids[idx]
+                oids = []
+            else:
+                print("Iggnored line {}: {}".format(cnt, rec))
+
+        print("Current SAI objects: {}".format(self.rec2vid))
+
     def assert_status_success(self, status, skip_not_supported=True, skip_not_implemented=True):
         if skip_not_supported:
             if status == "SAI_STATUS_NOT_SUPPORTED" or status == "SAI_STATUS_ATTR_NOT_SUPPORTED_0":
