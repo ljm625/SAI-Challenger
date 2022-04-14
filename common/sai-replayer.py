@@ -26,7 +26,7 @@ if __name__ == '__main__':
     import pydevd_pycharm
     pydevd_pycharm.settrace('10.79.96.73', port=7999, stdoutToServer=True, stderrToServer=True)
     records = __parse_rec(recording_file)
-    sai.reset()
+    # sai.reset()
     sai.apply_rec_init(records)
 
 
