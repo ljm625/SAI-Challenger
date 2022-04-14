@@ -30,6 +30,8 @@ if __name__ == '__main__':
     pydevd_pycharm.settrace('10.79.96.73', port=7999, stdoutToServer=True, stderrToServer=True)
     records = __parse_rec(recording_file)
     # sai.r.flushall()
+    sai.r.delete("ASIC_STATE_KEY_VALUE_OP_QUEUE")
+    sai.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
     subprocess.Popen("sudo systemctl restart syncd",shell=True)
     time.sleep(15)
     # sai.reset()
