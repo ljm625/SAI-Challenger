@@ -293,7 +293,7 @@ class Sai:
         return "{}:".format(length) + (elem + ",") * (length - 1) + elem
 
     def make_acl_list(self, length):
-        return f'false:{self.make_list(length, "0")}'
+        return 'false:{}'.format(self.make_list(length, "0"))
 
     def make_acl_resource_list(self, length):
         attr_value = {

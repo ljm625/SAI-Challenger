@@ -1,4 +1,4 @@
-from common.sai_npu import SaiNpu
+from sai_npu import SaiNpu
 
 exec_params = {
     "server": "localhost",
