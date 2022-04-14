@@ -1,3 +1,6 @@
+import subprocess
+import time
+
 from sai_npu import SaiNpu
 
 exec_params = {
@@ -26,6 +29,9 @@ if __name__ == '__main__':
     import pydevd_pycharm
     pydevd_pycharm.settrace('10.79.96.73', port=7999, stdoutToServer=True, stderrToServer=True)
     records = __parse_rec(recording_file)
+    sai.r.flushall()
+    subprocess.Popen("sudo systemctl restart syncd")
+    time.sleep(15)
     # sai.reset()
     sai.apply_rec_init(records)
 
