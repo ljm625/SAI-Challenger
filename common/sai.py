@@ -387,7 +387,7 @@ class Sai:
         self.r.publish("ASIC_STATE_CHANNEL", "G")
 
         status = [obj,attrs,"SAI_STATUS_SUCCESS".encode("utf-8")]
-        time.sleep(3)
+        time.sleep(0.1)
         self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
         return status
 
@@ -687,19 +687,25 @@ class Sai:
 
         print("Current SAI objects: {}".format(self.rec2vid))
 
-    def apply_rec_init(self, records):
+    def apply_rec_init(self, records, full_log):
         oids = []
-        inited =False
+        if full_log:
+            inited = False
+        else:
+            inited = True
         for cnt, rec in records.items():
             print("#{}: {}".format(cnt, rec))
             if rec[0] == 'c':
                 if "SAI_OBJECT_TYPE_SWITCH" in rec[1]:
                     if inited:
                         print("Object \"{}\" already exists!". format(rec[1]))
-                        continue
+                        return
                     else:
                         inited = True
                 attrs = []
+                if not inited:
+                    print("Skipping because Switch has not inited")
+                    continue
                 if len(rec) > 2:
                     for attr in rec[2:]:
                         attrs += attr.split('=')
@@ -718,18 +724,27 @@ class Sai:
                         # raise Exception(e)
 
             elif rec[0] == 's':
+                if not inited:
+                    print("Skipping because Switch has not inited")
+                    continue
                 data = rec[2].split('=')
                 if "oid:" in data[1]:
                     data[1] = self.rec2vid[data[1]]
 
                 self.set(self.__update_key(rec[0], rec[1]), data)
             elif rec[0] == 'r':
+                if not inited:
+                    print("Skipping because Switch has not inited")
+                    continue
                 try:
                     self.remove(self.__update_key(rec[0], rec[1]))
                 except Exception as e:
                     print("No Response on Delete {} {}".format(rec[0], rec[1]))
 
             elif rec[0] == 'g':
+                if not inited:
+                    print("Skipping because Switch has not inited")
+                    continue
                 attrs = []
                 if len(rec) > 2:
                     for attr in rec[2:]:
@@ -745,6 +760,9 @@ class Sai:
                     elif "oid:" in jdata[idx]:
                         oids.append(data.oid(idx))
             elif rec[0] == 'G':
+                if not inited:
+                    print("Skipping because Switch has not inited")
+                    continue
                 attrs = []
                 for attr in rec[2:]:
                     attrs += attr.split('=')
