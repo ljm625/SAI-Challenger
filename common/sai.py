@@ -182,6 +182,19 @@ class Sai:
                          (not self.client_mode and not os.path.isfile("/usr/local/lib/libsai.so")))
         self.run_traffic = exec_params["traffic"] and not self.libsaivs
         self.sku = exec_params["sku"]
+        """
+        if (!g_syncMode)
+        {
+            /*
+             * By default sync mode is disabled and all create/set/remove are
+             * considered success operations.
+             */
+    
+            return SAI_STATUS_SUCCESS;
+        }
+
+        """
+        self.sync_mode = False
 
     @staticmethod
     def get_meta(obj_type=None):
@@ -338,13 +351,11 @@ class Sai:
 
         status = []
         attempts = self.attempts
-        init_call = False
 
         # Wait upto 3 mins for switch init on HW
         if not self.libsaivs and obj.startswith("SAI_OBJECT_TYPE_SWITCH") and op == "Screate":
             tout = 0.5
             attempts = 240
-            init_call = True
 
         while len(status) < 3 and attempts > 0:
             time.sleep(tout)
@@ -353,15 +364,38 @@ class Sai:
 
         self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
 
-        if init_call:
-            if len(status) <3:
-                print("Failed getting response from Create Switch. Abort")
-                # return status
         assert len(status) == 3, "SAI \"{}\" operation failure!".format(op)
         return status
 
+    def operate_assume_success(self, obj, attrs, op):
+        self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
+
+        tout = 0.3
+        attempts = self.attempts
+        while len(self.r.lrange("GETRESPONSE_KEY_VALUE_OP_QUEUE", 0, -1)) > 0 and attempts > 0:
+            time.sleep(0.01)
+            attempts -= 1
+
+        if attempts == 0:
+            return []
+
+        # Remove spaces from the key string.
+        # Required by sai_serialize_route_entry() in sairedis.
+        obj = obj.replace(' ', '')
+
+        self.r.lpush("ASIC_STATE_KEY_VALUE_OP_QUEUE", obj, attrs, op)
+        self.r.publish("ASIC_STATE_CHANNEL", "G")
+
+        status = [obj,attrs,"SAI_STATUS_SUCCESS"]
+        time.sleep(3)
+        self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
+        return status
+
+
     def create(self, obj, attrs, do_assert = True):
         vid = None
+        # Switch sync mode and async mode
+
         if type(obj) == SaiObjType:
             vid = self.alloc_vid(obj)
             obj = "SAI_OBJECT_TYPE_" + obj.name + ":" + vid
@@ -371,9 +405,16 @@ class Sai:
             # {"dest":"0.0.0.0/0","switch_id":"oid:0x21000000000000","vr":"oid:0x3000000000022"}
             # For more details, please refer to sai_deserialize_route_entry() implementation.
             obj = obj.replace(" ", "")
+        if "SAI_OBJECT_TYPE_SWITCH" in obj:
+            # Creating switch
+            if "SAI_REDIS_SWITCH_ATTR_SYNC_MODE" in attrs:
+                self.sync_mode = True if attrs[attrs.index("SAI_REDIS_SWITCH_ATTR_SYNC_MODE")+1] == "true" else False
         if type(attrs) != str:
             attrs = json.dumps(attrs)
-        status = self.operate(obj, attrs, "Screate")
+        if self.sync_mode:
+            status = self.operate(obj, attrs, "Screate")
+        else:
+            status = self.operate_assume_success(obj, attrs, "Screate")
         status[2] = status[2].decode("utf-8")
         if do_assert:
             assert status[2] == 'SAI_STATUS_SUCCESS', "create({}, {}) --> {}".format(obj,attrs,status)
@@ -387,8 +428,10 @@ class Sai:
             obj = self.vid_to_type(obj) + ":" + obj
         assert obj.startswith("SAI_OBJECT_TYPE_")
         obj = obj.replace(" ", "")
-
-        status = self.operate(obj, "{}", "Dremove")
+        if self.sync_mode:
+            status = self.operate(obj, "{}", "Dremove")
+        else:
+            status = self.operate_assume_success(obj, "{}", "Dremove")
         status[2] = status[2].decode("utf-8")
         if do_assert:
             assert status[2] == 'SAI_STATUS_SUCCESS', "remove({}) --> {}".format(obj,status)
@@ -403,7 +446,10 @@ class Sai:
 
         if type(attr) != str:
             attr = json.dumps(attr)
-        status = self.operate(obj, attr, "Sset")
+        if self.sync_mode:
+            status = self.operate(obj, attr, "Sset")
+        else:
+            status = self.operate_assume_success(obj, attr, "Sset")
         status[2] = status[2].decode("utf-8")
         if do_assert:
             assert status[2] == 'SAI_STATUS_SUCCESS', "set({}, {}) --> {}".format(obj,attr,status)
