@@ -668,7 +668,7 @@ class Sai:
                     if "SAI_OBJECT_TYPE_SWITCH" in rec[1]:
                         print("Ignore create Switch issue")
                     else:
-                        print("Failure on Create {} {}".format(rec[0],rec[1]))
+                        print("No Response on Create {} {}".format(rec[0],rec[1]))
                         # raise Exception(e)
 
             elif rec[0] == 's':
@@ -678,7 +678,11 @@ class Sai:
 
                 self.set(self.__update_key(rec[0], rec[1]), data)
             elif rec[0] == 'r':
-                self.remove(self.__update_key(rec[0], rec[1]))
+                try:
+                    self.remove(self.__update_key(rec[0], rec[1]))
+                except Exception as e:
+                    print("No Response on Delete {} {}".format(rec[0], rec[1]))
+
             elif rec[0] == 'g':
                 attrs = []
                 if len(rec) > 2:
@@ -688,6 +692,7 @@ class Sai:
                 data = self.get(self.__update_key(rec[0], rec[1]), attrs)
 
                 jdata = data.to_json()
+                print("Response:"+jdata)
                 for idx in range(1, len(jdata), 2):
                     if ":oid:" in jdata[idx]:
                         oids += data.oids(idx)
