@@ -167,7 +167,7 @@ class SaiData:
 
 class Sai:
 
-    attempts = 200
+    attempts = 100
 
     def __init__(self, exec_params):
         self.server_ip = exec_params["server"]
@@ -668,7 +668,8 @@ class Sai:
                     if "SAI_OBJECT_TYPE_SWITCH" in rec[1]:
                         print("Ignore create Switch issue")
                     else:
-                        raise Exception(e)
+                        print("Failure on Create {} {}".format(rec[0],rec[1]))
+                        # raise Exception(e)
 
             elif rec[0] == 's':
                 data = rec[2].split('=')
