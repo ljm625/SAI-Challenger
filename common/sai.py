@@ -386,7 +386,7 @@ class Sai:
         self.r.lpush("ASIC_STATE_KEY_VALUE_OP_QUEUE", obj, attrs, op)
         self.r.publish("ASIC_STATE_CHANNEL", "G")
 
-        status = [obj,attrs,"SAI_STATUS_SUCCESS"]
+        status = [obj,attrs,"SAI_STATUS_SUCCESS".encode("utf-8")]
         time.sleep(3)
         self.r.delete("GETRESPONSE_KEY_VALUE_OP_QUEUE")
         return status
