@@ -692,7 +692,7 @@ class Sai:
                 data = self.get(self.__update_key(rec[0], rec[1]), attrs)
 
                 jdata = data.to_json()
-                print("Response:"+jdata)
+                print(jdata)
                 for idx in range(1, len(jdata), 2):
                     if ":oid:" in jdata[idx]:
                         oids += data.oids(idx)
