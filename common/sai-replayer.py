@@ -42,13 +42,14 @@ if __name__ == '__main__':
         time.sleep(15)
         full_record = True
     if args.sync_mode:
-        for i in range(0,len(records)):
-            if "SAI_OBJECT_TYPE_SWITCH" in records[i][1]:
-                if "SAI_REDIS_SWITCH_ATTR_SYNC_MODE" in records[i]:
-                    records[i][records[i].index("SAI_REDIS_SWITCH_ATTR_SYNC_MODE")+1] = "true"
-                else:
-                    records[i].append("SAI_REDIS_SWITCH_ATTR_SYNC_MODE")
-                    records[i].append("true")
+        for key,record in records.items():
+            if "SAI_OBJECT_TYPE_SWITCH" in record[1]:
+                for attr in record[2:]:
+                    if "SAI_REDIS_SWITCH_ATTR_SYNC_MODE" in attr:
+                        indx = record.index(attr)
+                        record[indx] = "SAI_REDIS_SWITCH_ATTR_SYNC_MODE=true"
+                        records[key] = record
+                record.append("SAI_REDIS_SWITCH_ATTR_SYNC_MODE=true")
                 break
     sai.apply_rec_init(records,full_record)
 
