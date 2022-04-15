@@ -29,7 +29,8 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--continue-with-swss", help="skip restart syncd, useful when using with swss", action="store_true")
     parser.add_argument("-s", "--sync-mode", help="Enable gSync", action="store_true")
     args = parser.parse_args()
-
+    import pydevd_pycharm
+    pydevd_pycharm.settrace('10.79.96.73', port=7999, stdoutToServer=True, stderrToServer=True)
     recording_file = args.rec_file
     sai = SaiNpu(exec_params)
     records = __parse_rec(recording_file)
@@ -49,8 +50,6 @@ if __name__ == '__main__':
                     records[i].append("SAI_REDIS_SWITCH_ATTR_SYNC_MODE")
                     records[i].append("true")
                 break
-    import pydevd_pycharm
-    pydevd_pycharm.settrace('10.79.96.73', port=7999, stdoutToServer=True, stderrToServer=True)
     sai.apply_rec_init(records,full_record)
 
 
